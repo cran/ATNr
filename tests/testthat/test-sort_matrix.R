@@ -16,3 +16,4 @@ test_that("sorting matrix works properly", {
   # check total number of links
   expect_equal(sum(fw), sum(sorted$food.web))
 })
+

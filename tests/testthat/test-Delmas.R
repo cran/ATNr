@@ -1,3 +1,4 @@
+
 test_that("The two versions of Scaled converge", {
   set.seed(123)
   n_species <- 50
@@ -16,9 +17,9 @@ test_that("The two versions of Scaled converge", {
   # 3) create the models:
   model <- create_model_Scaled(n_species, n_basal, masses, fw)
   # model2 uses same parameters as model
-  model2 <- new(Scaled_loops, n_species, n_basal)
+  model2 <- new(ATNr:::Scaled_loops, n_species, n_basal)
   model2[["BM"]] <- masses
-  model2[["log_BM"]] <- log10(masses)
+  # model2[["log_BM"]] <- log10(masses)
   model2[["fw"]] <- fw
   
   biomasses <- runif(n_species, 2, 3)

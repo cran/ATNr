@@ -41,7 +41,7 @@ model_unscaled_nuts$q <- 1.4
 # Changing the assimilation efficiencies of all species to 0.5 in the Scaled model:
 model_scaled$e = rep(0.5, model_scaled$nb_s)
 # print the different fields that can be updated and their values:
-str(model_unscaled_nuts)
+# str(model_unscaled_nuts)
 
 ## -----------------------------------------------------------------------------
 # for a model created by create_model_Unscaled_nuts():

@@ -18,9 +18,9 @@ test_that("The two versions of Unscaled_nuts converge", {
   # 3) create the models:
   model <- create_model_Unscaled_nuts(n_species, n_basal, n_nut, masses, fw)
   # model2 uses same parameters as model
-  model2 <- new(Unscaled_nuts_loops, n_species, n_basal, n_nut)
+  model2 <- new(ATNr:::Unscaled_nuts_loops, n_species, n_basal, n_nut)
   model2[["BM"]] <- masses
-  model2[["log_BM"]] <- log10(masses)
+  # model2[["log_BM"]] <- log10(masses)
   model2[["fw"]] <- fw
   
   biomasses <- runif(n_species + n_nut, 2, 3)

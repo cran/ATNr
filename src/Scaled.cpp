@@ -12,7 +12,7 @@ using namespace arma;
 //' @description Type the name of the class to see its methods
 //' @field nb_s Total number of species
 //' @field nb_b Number of basal species
-//' @field c double: inteference competition
+//' @field c double: interference competition
 //' @field X Vector of metabolic rates (length = number of species)
 //' @field max_feed Vector of maximum feeding rates (length = number of consumers)
 //' @field e Vector of assimilation efficiencies (length = number of species)
@@ -72,7 +72,7 @@ public:
 
   // body masses:
   vec BM;
-  vec log_BM;
+  // vec log_BM;
     
   // vector of derivatives
   vec dB;
@@ -208,7 +208,7 @@ using namespace Rcpp;
   .field("nb_s", &Scaled::nb_s)
   .field("nb_b", &Scaled::nb_b)
   .field("BM", &Scaled::BM)
-  .field("log_BM", &Scaled::log_BM)
+  // .field("log_BM", &Scaled::log_BM)
   .field("r", &Scaled::r)
   .field("X", &Scaled::X)
   .field("e", &Scaled::e)

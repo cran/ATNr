@@ -1,7 +1,7 @@
 Package: ATNr
 Type: Package
 Title: Run Allometric Trophic Networks Models
-Version: 1.0
+Version: 1.0.1
 Date: 2022-01-25
 Authors@R: 
     c(person("Benoit", "Gauzens", role = c("cre", "aut"), email = "benoit.gauzens@gmail.com"), 
@@ -17,9 +17,9 @@ Suggests: rmarkdown, knitr, testthat, R.rsp
 VignetteBuilder: knitr, R.rsp
 Config/testthat/edition: 3
 NeedsCompilation: yes
-Packaged: 2022-02-01 09:10:37 UTC; bg33novu
+Packaged: 2022-02-04 15:33:19 UTC; bg33novu
 Author: Benoit Gauzens [cre, aut],
   Emilio Berti [aut]
 Maintainer: Benoit Gauzens <benoit.gauzens@gmail.com>
 Repository: CRAN
-Date/Publication: 2022-02-01 19:30:08 UTC
+Date/Publication: 2022-02-07 11:30:02 UTC
