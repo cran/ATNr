@@ -53,6 +53,16 @@ create_matrix_parameter <- function(
 #'
 #' @return An object of class \emph{ATN (Rcpp_Unscaled_nuts)} with default
 #'   parameters as in Schneider et al. (2016).
+#'   
+#' @examples
+#' library(ATNr)
+#' set.seed(123)
+#' masses <- runif(20, 10, 100) #body mass of species
+#' L <- create_Lmatrix(masses, 10, Ropt = 10)
+#' L[L > 0] <- 1
+#' mod <- create_model_Unscaled_nuts(20, 10, 3, masses, L)
+#' mod <- initialise_default_Unscaled_nuts(mod, L)
+#' 
 initialise_default_Unscaled_nuts <- function(
   model,
   L.mat,
@@ -136,6 +146,15 @@ initialise_default_Unscaled_nuts <- function(
 #' @return An object of class \emph{Rcpp_Scaled} with default
 #'   parameters as in Delmas et al. (2017).
 #'
+#' @examples
+#' library(ATNr)
+#' set.seed(123)
+#' masses <- runif(20, 10, 100) #body mass of species
+#' L <- create_Lmatrix(masses, 10, Ropt = 10)
+#' L[L > 0] <- 1
+#' mod <- create_model_Scaled(20, 10, BM = masses, fw = L)
+#' mod <- initialise_default_Scaled(mod)
+#'
 initialise_default_Scaled <- function(model) {
 
   utils::data("schneider", envir = environment())
@@ -155,8 +174,9 @@ initialise_default_Scaled <- function(model) {
   model$w <- w[, (model$nb_b + 1):model$nb_s]
 
   # per gram metabolic rate
-  model$X <- with(schneider, 0.314 * BM^-0.25 / BM[1]^-0.25)
-  model$X[1:schneider$nb_b] <- 0.0
+  min.BM =  with(schneider, min(BM[1:nb_b]))
+  model$X <- with(schneider, 0.314 * BM^-0.25 / min.BM^-0.25)
+  # model$X[1:schneider$nb_b] <- 0.0
   # species efficiencies
   model$e <- with(schneider, c(rep(e_P, nb_b), rep(e_A, nb_s - nb_b)))
   # interference competition
@@ -168,7 +188,7 @@ initialise_default_Scaled <- function(model) {
   # Hill exponent
   model$q <- stats::rnorm(1, 1.2, 0.2)
   # max growth rate of plant species
-  model$r <- with(schneider, (ar * BM[1:nb_b]^-0.25) / (ar * BM[1]^-0.25))
+  model$r <- with(schneider, (ar * BM[1:nb_b]^-0.25) / (ar * min.BM^-0.25))
   # max carrying capacity of all plant species
   model$K <- 10
   # initialisation of the matrix of feeding rates.
@@ -207,6 +227,15 @@ initialise_default_Scaled <- function(model) {
 #'
 #' @return An object of class \emph{ATN (Rcpp_Unscaled)} with default
 #'   parameters as in Delmas et al. (2017).
+#'   
+#' @examples
+#  library(ATNr)
+#  set.seed(123)
+#  masses <- runif(20, 10, 100) #body mass of species
+#  L <- create_Lmatrix(masses, 10, Ropt = 10)
+#  L[L > 0] <- 1
+#  mod <- create_model_Unscaled(20, 10, 3, masses, L)
+#  mod <- initialise_default_Unscaled(mod)
 
 initialise_default_Unscaled <- function(model, temperature = 20){
   k <- 8.6173324e-5

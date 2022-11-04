@@ -13,7 +13,7 @@ using namespace arma;
 //' @field nb_s Total number of species
 //' @field nb_b Number of basal species
 //' @field nb_n Number of nutrient pool
-//' @field c double: inteference competition
+//' @field c double: interference competition
 //' @field b Matrix of attack rates (dim = number of species * number of consumers)
 //' @field h Matrix of handling times (dim = number of species * number of consumers)
 //' @field X vector of metabolic rates (length = number of species)
@@ -214,7 +214,8 @@ public:
     for (res = 0; res != nb_b; ++res){
       G(res) = min(bioms(nut) / (K.col(res) + bioms(nut)));
     }
-    // G could be calculated like that, not sure there is uch to win here though
+    // G could be calculated using matrix inversion, 
+    // not sure there is much to win here though
     // Cholesky algs are in general in O(n^3)
     // KandBioms = k.each_col() + bioms(nut);
     // G = min(inv(KandBioms.each_col() / bioms(nut)), DIMENSION)

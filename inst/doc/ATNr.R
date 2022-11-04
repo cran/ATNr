@@ -46,13 +46,10 @@ model_scaled$e = rep(0.5, model_scaled$nb_s)
 ## -----------------------------------------------------------------------------
 # for a model created by create_model_Unscaled_nuts():
 model_unscaled_nuts <- initialise_default_Unscaled_nuts(model_unscaled_nuts, L)
-model_unscaled_nuts$initialisations()
 # for a model created by create_model_Scaled():
 model_scaled <- initialise_default_Scaled(model_scaled)
-model_scaled$initialisations()
 # for a model created by create_model_Unscaled():
 model_unscaled <- initialise_default_Unscaled(model_unscaled)
-model_unscaled$initialisations()
 
 ## ----wrappers-----------------------------------------------------------------
 biomasses <- masses ^ -0.75 * 1e1 # starting biomasses
@@ -63,6 +60,7 @@ sol <- lsoda_wrapper(times, biomasses, model_unscaled_nuts)
 
 ## ----deSolve------------------------------------------------------------------
 # running simulations for the Schneider model
+model_unscaled_nuts$initialisations()
 sol <- deSolve::lsoda(
   biomasses,
   times,
@@ -145,7 +143,6 @@ for (t in temperatures){
   model <- initialise_default_Unscaled_nuts(model, L, temperature = t)
   model$q <- 1.2
   model$S <- rep(10, n_nut)
-  model$initialisations()
   # running simulations for the Schneider model:
   sol <- lsoda_wrapper(times, biomasses, model, verbose = FALSE)
   # retrieve the number of species that went extinct before the end of the
@@ -193,7 +190,6 @@ for (scal in scaling) {
   mod0 <- initialise_default_Unscaled(mod0, temperature = 0)
   mod0$c <- rep(0, mod0$nb_s - mod0$nb_b)
   mod0$alpha <- diag(mod0$nb_b)
-  mod0$initialisations()
   
   mod40 <- create_model_Unscaled(nb_s = S,
                                nb_b = sum(colSums(fw) == 0),
@@ -202,7 +198,6 @@ for (scal in scaling) {
   mod40 <- initialise_default_Unscaled(mod40, temperature = 40)
   mod40$c <- rep(0, mod40$nb_s - mod40$nb_b)
   mod40$alpha <- diag(mod40$nb_b)
-  mod40$initialisations()
   
   times <- seq(1, 1e9, by = 1e7)
   
@@ -240,7 +235,6 @@ mod <- create_model_Scaled(nb_s = S,
                            BM = masses,
                            fw = fw)
 mod <- initialise_default_Scaled(mod)
-mod$initialisations()
 times <- seq(0, 500, by = 2)
 biomasses <- runif(S, 2, 3) # starting biomasses
 
@@ -276,7 +270,6 @@ model_unscaled_nuts$nb_s #this is the model parameter
 ## -----------------------------------------------------------------------------
 times <- seq(0, 15000, 150)
 model_unscaled_nuts$nb_s = 40
-model_unscaled_nuts$initialisations()
 # this will return an error :
 # sol <- lsoda_wrapper(times, biomasses, model_schneider)
 
@@ -294,7 +287,6 @@ fw[fw > 0] <- 1
 model_unscaled_nuts <- create_model_Unscaled_nuts(nb_s, nb_b, nb_n, masses, fw)
 model_unscaled_nuts <- initialise_default_Unscaled_nuts(model_unscaled_nuts, L)
 model_unscaled_nuts$BM <- sqrt(model_unscaled_nuts$BM) # we change body masses within the model
-model_unscaled_nuts$initialisations()
 sol <- lsoda_wrapper(seq(1, 5000, 50), biomasses, model_unscaled_nuts)
 par(mar = c(4, 4, 1, 1))
 plot_odeweb(sol, model_unscaled_nuts$nb_s)
@@ -312,20 +304,6 @@ fw[fw > 0] <- 1
 model_unscaled_nuts <- create_model_Unscaled_nuts(nb_s, nb_b, nb_n, masses, fw)
 model_unscaled_nuts <- initialise_default_Unscaled_nuts(model_unscaled_nuts, L)
 # safely run the integration:
-model_unscaled_nuts$initialisations()
-sol <- lsoda_wrapper(times, biomasses, model_unscaled_nuts)
-
-## ----mistake 3----------------------------------------------------------------
-nb_s <- 30
-masses <- sort(10 ^ runif(nb_s, 2, 6)) #body mass of species
-L <- create_Lmatrix(masses, nb_b, Ropt = 50)
-L[, 1:nb_b] <- 0
-fw <- L
-fw[fw > 0] <- 1
-# create a new object:
-model_unscaled_nuts <- create_model_Unscaled_nuts(nb_s, nb_b, nb_n, masses, fw)
-model_unscaled_nuts <- initialise_default_Unscaled_nuts(model_unscaled_nuts, L)
-model_unscaled_nuts$initialisations() # commenting this line will lead to wrong results.
 sol <- lsoda_wrapper(times, biomasses, model_unscaled_nuts)
 
 ## ----mistake 4----------------------------------------------------------------

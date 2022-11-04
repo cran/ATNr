@@ -56,7 +56,6 @@ public:
   IntegerVector::iterator cons;
   IntegerVector::iterator cons2;
   IntegerVector::iterator res;
-  IntegerVector::iterator nut; //not properly needed, but more readable
   NumericVector uptake;
   double out;
   int i;
@@ -102,7 +101,6 @@ public:
     IntegerVector::iterator cons;
     IntegerVector::iterator cons2;
     IntegerVector::iterator res;
-    IntegerVector::iterator nut; //not properly needed, but more readable
     uptake = NumericVector(nb_b);
     out = 0;
     i = 0;
@@ -144,7 +142,7 @@ public:
     
     for (res = all.begin(); res != all.end(); res++){
       for (cons = animals.begin(); cons != animals.end(); cons++){
-        if ((a(*res, *cons - nb_b) > 0) & (bioms(*res) > 0.0) & (bioms(*cons)>0.0)){
+        if ((a(*res, *cons - nb_b) > 0) && (bioms(*res) > 0.0) && (bioms(*cons)>0.0)){
           F(*res, *cons - nb_b) = F_rate(*res, *cons-nb_b, bioms);
         }
         else{
