@@ -27,16 +27,34 @@
 #' biomasses <- append(runif(3, 20, 30), biomasses)
 #' times <- seq(0, 100, 1)
 #' sol <- lsoda_wrapper(times, biomasses, mod)
+#' range(sol[, -1])
+#' mod$ext <- 1e-3
+#' sol <- lsoda_wrapper(times, biomasses, mod)
 lsoda_wrapper <- function(t, y, model, verbose = FALSE, ...) {
+  if (is(model, "Rcpp_Unscaled") || is(model, "Rcpp_Scaled")) {
+    stopifnot(model$nb_s == length(y))
+  } else if (is(model, "Rcpp_Unscaled_nuts")) {
+    stopifnot(model$nb_s + model$nb_n == length(y))
+  } else {
+    stop("The model does not seem to be an ATNr model.")
+  }
+  
+  if (length(model$q) == 1){
+    model$q = rep(model$q, model$nb_s - model$nb_b)
+    warning('q is expected to be a vector of length = number of consumers, not a scalar.
+Same value was used for all consumers')
+  }
   model$initialisations()
   run_checks(model, verbose)
-  deSolve::lsoda(
+  ans <- deSolve::lsoda(
     y,
     t,
     func = function(t, y, pars) list(pars$ODE(y, t)),
     model,
     ...
   )
+  ans <- .filter_extinct(ans, model)
+  return (ans)
 }
 
 # #' @title Wrapper for sundial

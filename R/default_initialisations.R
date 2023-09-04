@@ -115,7 +115,7 @@ initialise_default_Unscaled_nuts <- function(
   model$h <- with(schneider, create_matrix_parameter(BM, h0, hprey, hpred, E.h, T.K, T0, k))
   model$h <- model$h[, (model$nb_b + 1):model$nb_s]
   # Hill exponent
-  model$q <- stats::rnorm(1, 1.5, 0.2)
+  model$q <- stats::rnorm(model$nb_s - model$nb_b, 1.5, 0.2)
   # plant stoichiometry (relative content in  the nutrients) !!!!!!!!!! to update. here assume 2 nutrients only !!!!!!!
   model$V <- with(schneider,
                   matrix(stats::runif(nb_b * nb_n, 1, 2), nrow = nb_n, ncol = nb_b))
@@ -126,6 +126,7 @@ initialise_default_Unscaled_nuts <- function(
   # all values are 0 for now. Updated at each call of the ODEs estimations.
   model$F <- with(schneider, matrix(0.0, nrow = nb_s, ncol = nb_s - nb_b))
 
+  
   return(model)
 }
 
@@ -186,7 +187,7 @@ initialise_default_Scaled <- function(model) {
   # half sturation density:
   model$B0 <- rep(0.5, model$nb_s - model$nb_b)
   # Hill exponent
-  model$q <- stats::rnorm(1, 1.2, 0.2)
+  model$q <- rep(1.2, model$nb_s - model$nb_b)
   # max growth rate of plant species
   model$r <- with(schneider, (ar * BM[1:nb_b]^-0.25) / (ar * min.BM^-0.25))
   # max carrying capacity of all plant species
@@ -201,6 +202,8 @@ initialise_default_Scaled <- function(model) {
 
   model$alpha <- matrix(0, nrow = model$nb_b, ncol = model$nb_b)
   diag(model$alpha) = 1
+  
+  model$ext <- 1e-6
   
   return(model)
 }
@@ -257,7 +260,7 @@ initialise_default_Unscaled <- function(model, temperature = 20){
   model$h <- create_matrix_parameter(model$BM, exp(9.66), -0.45, 0.47, -0.26, T.K, T0, k)
   model$h <- model$h * model$fw
   model$h <- model$h[, (model$nb_b + 1):model$nb_s]
-  model$q <- 1.2
+  model$q <- rep(1.2, model$nb_s - model$nb_b)
   
   # plant resource competition, matrix should be symetric by default
   # model$alpha = matrix(runif(model$nb_b*model$nb_b, 0.5, 1), nrow = model$nb_b, ncol = model$nb_b)
@@ -265,6 +268,8 @@ initialise_default_Unscaled <- function(model, temperature = 20){
   
   model$alpha <- matrix(0, nrow = model$nb_b, ncol = model$nb_b)
   diag(model$alpha) = 1
+  
+  model$ext <- 1e-6
 
   return(model)
 }

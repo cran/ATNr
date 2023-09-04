@@ -15,12 +15,12 @@ public:
   int nb_s; // number of species
   int nb_b; // number of basal species
 
-  double q;
   double test_double;
   double ext;
   double s;
 
 
+  NumericVector q;
   NumericVector X; // metabolic rates
   NumericVector e; // assimilation efficiencies
   NumericVector r; // growth rates of plants
@@ -50,7 +50,7 @@ public:
   IntegerVector animals;
   IntegerVector all;
 
-  NumericVector pow_bioms;
+  // NumericVector pow_bioms;
   
   // LogicalVector prey = fw[_,1] = 1;
   IntegerVector::iterator cons;
@@ -63,7 +63,7 @@ public:
   Unscaled_loops(int ns, int nb):
     nb_s(ns), nb_b(nb) {
 
-
+    q = NumericVector(nb_s - nb_b);
     X = NumericVector(nb_s); // metabolic rates
     e = NumericVector(nb_s); // assimilation efficiencies
     r = NumericVector(nb_b); // growth rates of plants
@@ -95,7 +95,7 @@ public:
     animals = Range(nb_b, nb_s - 1);
     all = Range(0, nb_s - 1);
 
-    pow_bioms = NumericVector(nb_s);
+    // pow_bioms = NumericVector(nb_s);
     
     // LogicalVector prey = fw[_,1] = 1;
     IntegerVector::iterator cons;
@@ -104,7 +104,7 @@ public:
     uptake = NumericVector(nb_b);
     out = 0;
     i = 0;
-    q = 0.0;
+    // q = 0.0;
     ext = 0.0;
     // s = 0.0;
 
@@ -128,9 +128,9 @@ public:
     int i;
 
     for (i=0; i<nb_s; i++){
-      tot += h(i,pred)*a(i,pred) * pow_bioms[i];
+      tot += h(i,pred)*a(i,pred) * pow(bioms[i], q[pred]);
     }
-    return ((a(prey,pred)*pow_bioms(prey)) / 
+    return ((a(prey,pred)*pow(bioms[prey], q[pred])) / 
             (1 + c(pred)*bioms(pred + nb_b) + tot));
   }
   
@@ -138,7 +138,7 @@ public:
   NumericVector ODE(NumericVector bioms, double t){ // for odeintr
     
     bioms[bioms < ext] = 0.0;
-    pow_bioms = pow(bioms, q);
+    // pow_bioms = pow(bioms, q);
     
     for (res = all.begin(); res != all.end(); res++){
       for (cons = animals.begin(); cons != animals.end(); cons++){
@@ -160,14 +160,14 @@ public:
         out += bioms[*cons] * F(*res, *cons - nb_b);
       }
       // plant resource competition 
-      // s = 0;
-      // for (i=0; i<nb_b; i++){
-      //   s += alpha(*res, i)*bioms[i];
-      // }
+      s = 0;
+      for (i=0; i<nb_b; i++){
+        s += alpha(*res, i)*bioms[i];
+      }
 
       // Rcout << 1-s/K[*res] << "  ";
       // s = bioms[*res];
-      dB[*res] = r[*res]*bioms[*res]*(1-bioms[*res]/K[*res]) - out - X[*res]*bioms[*res];
+      dB[*res] = r[*res]*bioms[*res]*(1-s/K[*res]) - out - X[*res]*bioms[*res];
     }
     // Rcout << " plants done " << std::endl;
 

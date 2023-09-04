@@ -6,6 +6,11 @@ knitr::opts_chunk$set(
 
 ## ---- include=FALSE, echo=FALSE-----------------------------------------------
 oldpar <- par()
+# if (!nzchar(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))) {
+#   ## Possible values: 'TRUE' 'false', 'warn', 'error'
+#   Sys.setenv("_R_CHECK_LIMIT_CORES_" = "TRUE")
+# }
+Sys.setenv("OMP_NUM_THREADS" = 1)
 
 ## -----------------------------------------------------------------------------
 library(ATNr)
@@ -13,6 +18,12 @@ set.seed(123)
 n_species <- 20 # number of species
 conn <- 0.3 # connectance
 fw <- create_niche_model(n_species, conn)
+# The number of basal species can be calculated:
+n_basal <- sum(colSums(fw) == 0)
+
+## -----------------------------------------------------------------------------
+TL = TroLev(fw) #trophic levels
+masses <- 1e-2 * 10 ^ (TL - 1)
 
 ## -----------------------------------------------------------------------------
 n_species <- 20
@@ -36,8 +47,8 @@ model_scaled <- create_model_Scaled(n_species, n_basal, masses, fw)
 model_unscaled <- create_model_Unscaled(n_species, n_basal, masses, fw)
 
 ## -----------------------------------------------------------------------------
-# updating the hill coefficient in the Unscaled_nuts model:
-model_unscaled_nuts$q <- 1.4
+# updating the hill coefficient of consumers in the Unscaled_nuts model:
+model_unscaled_nuts$q <- rep(1.4, model_unscaled_nuts$nb_s - model_unscaled_nuts$nb_s)
 # Changing the assimilation efficiencies of all species to 0.5 in the Scaled model:
 model_scaled$e = rep(0.5, model_scaled$nb_s)
 # print the different fields that can be updated and their values:
@@ -52,7 +63,7 @@ model_scaled <- initialise_default_Scaled(model_scaled)
 model_unscaled <- initialise_default_Unscaled(model_unscaled)
 
 ## ----wrappers-----------------------------------------------------------------
-biomasses <- masses ^ -0.75 * 1e1 # starting biomasses
+biomasses <-runif(n_species, 2, 3) # starting biomasses
 biomasses <- append(runif(3, 20, 30), biomasses) # nutrient concentration
 # defining the desired integration time
 times <- seq(0, 1500, 5)
@@ -141,7 +152,8 @@ for (t in temperatures){
   # Therefore, it is not needed to create a new model object
   # TO reinitialise the different parameters is enough
   model <- initialise_default_Unscaled_nuts(model, L, temperature = t)
-  model$q <- 1.2
+  # updating the value of q, same for all consumers
+  model$q = rep(1.4, n_species - n_basal)
   model$S <- rep(10, n_nut)
   # running simulations for the Schneider model:
   sol <- lsoda_wrapper(times, biomasses, model, verbose = FALSE)
@@ -235,7 +247,7 @@ mod <- create_model_Scaled(nb_s = S,
                            BM = masses,
                            fw = fw)
 mod <- initialise_default_Scaled(mod)
-times <- seq(0, 500, by = 2)
+times <- seq(0, 300, by = 2)
 biomasses <- runif(S, 2, 3) # starting biomasses
 
 ## ----delmas 2-----------------------------------------------------------------
@@ -326,6 +338,53 @@ model_2 = model_1
 model_1$q = 1.8
 # this also updated the value in model_2:
 model_2$q
+
+## -----------------------------------------------------------------------------
+plus.3 = function(x, useless) {
+  y = x+3
+  useless = useless + 1
+  return(y)
+}
+
+useless = 4:10
+useless2 = useless
+x = sapply(1:5, plus.3, useless)
+# the useless variable was not modified:
+useless == useless2
+
+## -----------------------------------------------------------------------------
+
+n_species <- 20
+n_basal <- 5
+n_cons = n_species - n_basal
+n_nut <- 2
+masses <- 10 ^ c(sort(runif(n_basal, 0, 3)),
+                 sort(runif(n_species - n_basal, 2, 5)))
+L <- create_Lmatrix(masses, n_basal, Ropt = 100, gamma = 2, th = 0.01)
+fw <- L
+fw[fw > 0] <- 1
+model <- create_model_Unscaled_nuts(n_species, n_basal, n_nut, masses, fw)
+model <- initialise_default_Unscaled_nuts(model, L, temperature = 20)
+
+## -----------------------------------------------------------------------------
+# a function that sets all elements of model$b to 0
+a.fun <-  function(x, model){
+  model$b = model$b*0
+  return(x+1)
+}
+
+## ---- eval = FALSE------------------------------------------------------------
+#  x = c(1,2)
+#  sum(model$b)
+#  y = lapply(x, a.fun, model)
+#  sum(model$b)
+
+## ---- eval = FALSE------------------------------------------------------------
+#  library(parallel)
+#  sum(model$b)
+#  model <- initialise_default_Unscaled_nuts(model, L, temperature = 20)
+#  y = mclapply(x, a.fun, model = model, mc.cores=5)
+#  sum(model$b)
 
 ## ----restore par, include=FALSE, echo=FALSE-----------------------------------
 par(oldpar)

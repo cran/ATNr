@@ -17,10 +17,14 @@ knitr::opts_chunk$set(
 
 ```{r, include=FALSE, echo=FALSE}
 oldpar <- par()
+# if (!nzchar(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))) {
+#   ## Possible values: 'TRUE' 'false', 'warn', 'error'
+#   Sys.setenv("_R_CHECK_LIMIT_CORES_" = "TRUE")
+# }
+Sys.setenv("OMP_NUM_THREADS" = 1)
 ```
 
 The package *ATNr* defines the differential equations and parametrisation of different versions of the Allometric Trophic Network (ATN) model. It is structured around a model object that contains a function implementing the ordinary differential equations (ODEs) of the model and various attributes defining the different parameters to run the ODEs.
-
 
 Two different versions of the model are implemented: 
 
@@ -50,7 +54,17 @@ set.seed(123)
 n_species <- 20 # number of species
 conn <- 0.3 # connectance
 fw <- create_niche_model(n_species, conn)
+# The number of basal species can be calculated:
+n_basal <- sum(colSums(fw) == 0)
 ```
+
+As the niche model does not rely on allometry, it is possible to estimate species body masses from their trophic levels, which can be calculated form the ```TroLev``` function of the package. For instance: 
+
+```{r}
+TL = TroLev(fw) #trophic levels
+masses <- 1e-2 * 10 ^ (TL - 1)
+```
+
 
 The allometric scaling model generate links based on species body masses. Therefore, it requires as an input a vector containing the body mass of species, as well as a parameter informing on the number of basal species desired. It produces a so-called L matrix which formally quantifies the probability for a consumer to successfully attack and consumer an encountered resource: 
 
@@ -90,8 +104,8 @@ model_unscaled <- create_model_Unscaled(n_species, n_basal, masses, fw)
 Once created, it is possible to access to the methods and attributes of the object to initialise or update them: 
 
 ```{r}
-# updating the hill coefficient in the Unscaled_nuts model:
-model_unscaled_nuts$q <- 1.4
+# updating the hill coefficient of consumers in the Unscaled_nuts model:
+model_unscaled_nuts$q <- rep(1.4, model_unscaled_nuts$nb_s - model_unscaled_nuts$nb_s)
 # Changing the assimilation efficiencies of all species to 0.5 in the Scaled model:
 model_scaled$e = rep(0.5, model_scaled$nb_s)
 # print the different fields that can be updated and their values:
@@ -125,7 +139,7 @@ Importantly, for the unscaled with nutrients model of @schneider2016animal, the 
 Once all the parameters are properly defined, the ODEs can be integrated by any solver. We present here a solution based on `lsoda` from library `deSolve` (@DeSolve), but other solutions exist (`sundialr` is also a possibility). The package propose a direct wrapper to `lsoda` with the function `lsoda_wrapper`: 
 
 ```{r wrappers}
-biomasses <- masses ^ -0.75 * 1e1 # starting biomasses
+biomasses <-runif(n_species, 2, 3) # starting biomasses
 biomasses <- append(runif(3, 20, 30), biomasses) # nutrient concentration
 # defining the desired integration time
 times <- seq(0, 1500, 5)
@@ -150,7 +164,7 @@ sol <- deSolve::lsoda(
 
 Not that the call of `model_unscaled_nuts$initialisation()` is important here as it pre-computes some variables to optimise code execution. This function is normally internally called by `lsoda_wrapper`. In case of an integration that does not rely on this wrapper function, the call to `$initialisation()` is needed for ALL the model types. 
 
-The package also contains a simple function to plot the time series obtained: plot_odeweb.
+The package also contains a simple function to plot the time series obtained: plot_odeweb. The colours only differentiate the species using their ranks in the food web matrix (from blue to red). 
 
 ```{r plot_odeweb, fig.width=4, fig.height=3, fig.align='center'}
 par(mar = c(4, 4, 1, 1))
@@ -258,7 +272,8 @@ for (t in temperatures){
   # Therefore, it is not needed to create a new model object
   # TO reinitialise the different parameters is enough
   model <- initialise_default_Unscaled_nuts(model, L, temperature = t)
-  model$q <- 1.2
+  # updating the value of q, same for all consumers
+  model$q = rep(1.4, n_species - n_basal)
   model$S <- rep(10, n_nut)
   # running simulations for the Schneider model:
   sol <- lsoda_wrapper(times, biomasses, model, verbose = FALSE)
@@ -351,9 +366,9 @@ legend(0.1, 0.9, legend = c("40 \u00B0C", "0 \u00B0C"), fill = c("red", "blue"))
 
 ## Paradox of enrichment
 
-The paradox of enrichment states that by increasing the carrying capacity of basal species may destabilize the population dynamics @Rosenzweig. Here, we show how this can be studied with the _ATNr_; we used the model from @delmas2017simulations, but similar results can be obtained using the other two models in the package.
+The paradox of enrichment states that by increasing the carrying capacity of basal species may destabilize the population dynamics (@Rosenzweig). Here, we show how this can be studied with the _ATNr_; we used the model from @delmas2017simulations, but similar results can be obtained using the other two models in the package.
 
-First, we create a food web with 20 species and initialize the model
+First, we create a food web with 10 species and initialize the model
 
 ```{r delmas 1}
 set.seed(1234)
@@ -370,7 +385,7 @@ mod <- create_model_Scaled(nb_s = S,
                            BM = masses,
                            fw = fw)
 mod <- initialise_default_Scaled(mod)
-times <- seq(0, 500, by = 2)
+times <- seq(0, 300, by = 2)
 biomasses <- runif(S, 2, 3) # starting biomasses
 ```
 
@@ -426,7 +441,6 @@ model_unscaled_nuts$nb_s = 40
 # sol <- lsoda_wrapper(times, biomasses, model_schneider)
 ```
 
-
 However, some modification can remain undetected. For instance, modifying species' body masses only won't raise any errors. However, a change in species body mass should be associated to a change in all the associated biological rates. The following code won't raise any errors, but will produce results relying on a model with an incoherent set of parameters and therefore wrong result:
 
 ```{r mistake 2, fig.width=6}
@@ -448,7 +462,6 @@ par(mar = c(4, 4, 1, 1))
 plot_odeweb(sol, model_unscaled_nuts$nb_s)
 ```
 
-
 In general, each time one of these key parameters is modified (`nb_s`, `nb_b`, `nb_n` for the Schneider model, `BM`, `fw`), it is strongly recommended to create a new model objects with the updated parameters:
 
 ```{r}
@@ -467,17 +480,16 @@ model_unscaled_nuts <- initialise_default_Unscaled_nuts(model_unscaled_nuts, L)
 sol <- lsoda_wrapper(times, biomasses, model_unscaled_nuts)
 ```
 
-
 Specifically to the Schneider model, changing the 'Lmatrix' requires to update the feeding rate (`$b`). 
 
 ## Changing the dimensions of vectors and matrix fields in a model object without doing it consistently.
 
 Changing the dimensions of a vector or matrix object somehow implies a change in the number of species (see section above). For instance, decreasing the length of the assimilation efficiencies vector `$e` should imply a consistent update of all the other parameters (handling times, attack rates, body masses, etc depending on the model). The function `remove_species` is made to properly remove species from model objects without having to manually regenerate all parameters. 
 
-
-## copying model to another model variable
+## Shallow copying models
 
 As built on Rcpp, the different models are only pointers to C++ objects. It means that this script:
+
 ```{r mistake 4}
 nb_s <- 30
 nb_n <- 2
@@ -505,8 +517,70 @@ model_2$q
 
 Therefore, to create a new model object based on another one, it is important to formally create one (either with one of the `create_model_` function, or using `new`). More information on copying variables using pointers here: https://stackoverflow.com/questions/184710/what-is-the-difference-between-a-deep-copy-and-a-shallow-copy
 
+## Modifying a model object in a *apply function
 
-**Note: Should we let the possibility for users to update these key parameters (i.e. the ones in the create_model() functions)? Should we restrict them that they can only be read and not modified? For instance by not exporting them and creating a get_x() method that would return the value of x? This options is much better in terms of "security" but much less straightforward to use. **
+Modifying a R variable inside a ```*apply``` function in does not modify it:
+
+```{r}
+plus.3 = function(x, useless) {
+  y = x+3
+  useless = useless + 1
+  return(y)
+}
+
+useless = 4:10
+useless2 = useless
+x = sapply(1:5, plus.3, useless)
+# the useless variable was not modified:
+useless == useless2
+```
+
+However, this is not the case anymore with a model object. If we consider a model object:
+
+```{r}
+
+n_species <- 20
+n_basal <- 5
+n_cons = n_species - n_basal
+n_nut <- 2
+masses <- 10 ^ c(sort(runif(n_basal, 0, 3)),
+                 sort(runif(n_species - n_basal, 2, 5)))
+L <- create_Lmatrix(masses, n_basal, Ropt = 100, gamma = 2, th = 0.01)
+fw <- L
+fw[fw > 0] <- 1
+model <- create_model_Unscaled_nuts(n_species, n_basal, n_nut, masses, fw)
+model <- initialise_default_Unscaled_nuts(model, L, temperature = 20)
+```
+
+and a function that takes this model object as an argument, setting the b matrix to 0:
+
+```{r}
+# a function that sets all elements of model$b to 0
+a.fun <-  function(x, model){
+  model$b = model$b*0
+  return(x+1)
+}
+```
+
+then, we can see that the global model object is indeed modified when the function is called by *apply:
+
+```{r, eval = FALSE}
+x = c(1,2)
+sum(model$b)
+y = lapply(x, a.fun, model)
+sum(model$b)
+```
+
+This behaviour is still due to the fact that in a *apply function the model is shallow-copied and each iteration points in fact to the same object in memory.
+However, this behaviour is not present when using a parallel version of an apply function, as in parallel computations the object is automatically deep-copied and passed to each task separately:
+
+```{r, eval = FALSE}
+library(parallel)
+sum(model$b)
+model <- initialise_default_Unscaled_nuts(model, L, temperature = 20)
+y = mclapply(x, a.fun, model = model, mc.cores=5)
+sum(model$b)
+```
 
 ```{r restore par, include=FALSE, echo=FALSE}
 par(oldpar)
