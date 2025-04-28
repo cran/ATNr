@@ -1,10 +1,10 @@
-## ---- include = FALSE---------------------------------------------------------
+## ----include = FALSE----------------------------------------------------------
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 
-## ---- include=FALSE, echo=FALSE-----------------------------------------------
+## ----include=FALSE, echo=FALSE------------------------------------------------
 oldpar <- par()
 # if (!nzchar(Sys.getenv("_R_CHECK_LIMIT_CORES_", ""))) {
 #   ## Possible values: 'TRUE' 'false', 'warn', 'error'
@@ -111,7 +111,7 @@ n_basal <- 5
 masses <- c(sort(10^runif(n_basal, 1, 3)), sort(10^runif(n_species - n_basal, 2, 6)))
 L <- create_Lmatrix(masses, n_basal, Ropt = 100, gamma = 2, th = 0.01)
 
-## ---- fig.width=4, fig.height=4, fig.align='center'---------------------------
+## ----fig.width=4, fig.height=4, fig.align='center'----------------------------
 # boolean version
 fw <- L > 0
 # 0/1 version:
@@ -164,7 +164,7 @@ for (t in temperatures){
   extinctions[i] <- sum(sol[nrow(sol), 4:ncol(sol)] < 1e-6)
 }
 
-## ---- fig.width=4, fig.height=3, fig.align='center'---------------------------
+## ----fig.width=4, fig.height=3, fig.align='center'----------------------------
 plot(temperatures, extinctions,
      pch = 20, cex = 0.5, ylim = c(0,50), frame = FALSE,
      ylab = "Number of Extinctions", xlab = "Temperature (°C)")
@@ -373,13 +373,13 @@ a.fun <-  function(x, model){
   return(x+1)
 }
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  x = c(1,2)
 #  sum(model$b)
 #  y = lapply(x, a.fun, model)
 #  sum(model$b)
 
-## ---- eval = FALSE------------------------------------------------------------
+## ----eval = FALSE-------------------------------------------------------------
 #  library(parallel)
 #  sum(model$b)
 #  model <- initialise_default_Unscaled_nuts(model, L, temperature = 20)
